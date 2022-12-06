@@ -1,10 +1,15 @@
 import psycopg2 
 
+def execQuery(connect, sql):
+    cur=connect.cursor()
+    cur.execute(sql)
+    connect.commit()
+
 def conecta_bd():                 #criando conexão com o banco
     connect = psycopg2.connect(
 
         host='localhost', 
-        database='TrabLog',
+        database='trablog',
         user='postgres', 
         password='Joaointer23')
 
@@ -37,3 +42,47 @@ for j in bd_inicial:
 		numEspacos+=1	
 for i in range(0,numEspacos,1):
 	bd_inicial.remove('')
+	
+connect= conecta_bd()
+
+bd_vetor=[]
+for line in bd_inicial:
+    splitedLine=line.split('=')
+    for i in range(0,len(splitedLine),1):
+        splitedLine[i]=splitedLine[i].strip()
+        if ',' in splitedLine[i]:
+            splitedLine[i]=splitedLine[i].split(',') 
+    splitedLine.append('Nao inserido')
+
+    bd_vetor.append(splitedLine)
+
+sql='DROP TABLE IF EXISTS log_table'
+execQuery(connect, sql) #se a tabela já existir, será excluída.
+
+column=[]
+sqlColumns=''
+
+for item in range(0,len(bd_vetor),1):
+    if bd_vetor[item][0][0] not in column:
+        sqlColumns=sqlColumns+','+bd_vetor[item][0][0]+' INT'
+        column.append(bd_vetor[item][0][0])
+
+sql='CREATE TABLE log_table (id INT'+sqlColumns+')'
+execQuery(connect,sql) #Aqui foi criada a tabela
+
+zerosNum=''
+for i in range(0,len(column),1):
+	zerosNum=zerosNum+',0'
+
+for item in range(0,len(bd_vetor),1):
+    if bd_vetor[item][2]=='Nao inserido':
+        sql = 'INSERT INTO log_table VALUES ('+bd_vetor[item][0][1]+zerosNum+')'
+        execQuery(connect, sql)
+        for itemTemp in range(0,len(bd_vetor),1):
+            if bd_vetor[itemTemp][0][1]==bd_vetor[item][0][1]:
+                bd_vetor[itemTemp][2]='Inserido'
+
+for item in range(0,len(bd_vetor),1):
+    sql='UPDATE log_table SET id = '+bd_vetor[item][0][1]+', '+bd_vetor[item][0][0]+' = '+bd_vetor[item][1]+' WHERE id ='+bd_vetor[item][0][1]
+    execQuery(connect, sql)
+	
