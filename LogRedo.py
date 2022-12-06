@@ -19,3 +19,21 @@ except:
     exit(0)
 
 fileArray=file.read().splitlines()
+
+log=[]
+bd_inicial=[]
+
+#lendo cada linha do arquivo se a abertura der certo
+
+for i in fileArray:
+	if(i.startswith("<")):
+		log.append(i)
+	else:
+		bd_inicial.append(i)
+
+numEspacos=0
+for j in bd_inicial:
+	if(j==''):
+		numEspacos+=1	
+for i in range(0,numEspacos,1):
+	bd_inicial.remove('')
