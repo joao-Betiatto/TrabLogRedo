@@ -85,4 +85,41 @@ for item in range(0,len(bd_vetor),1):
 for item in range(0,len(bd_vetor),1):
     sql='UPDATE log_table SET id = '+bd_vetor[item][0][1]+', '+bd_vetor[item][0][0]+' = '+bd_vetor[item][1]+' WHERE id ='+bd_vetor[item][0][1]
     execQuery(connect, sql)
-	
+
+#Começa checkpoints
+commitedTransactions={}
+checkpointStart=0 #início
+checkpointFuncional=False
+ 
+for line in range(len(log)-1,-1,-1):
+	if 'CKPT' in log[line] and 'Start' in log[line]:
+		checkpointStart=line
+		for lineEndCkpt in range(len(log)-1,-1,-1):
+			if 'End' in log[lineEndCkpt] and lineEndCkpt>line:
+				checkpointFuncional=True 
+				for lineCkpt in range(line,len(log)-1,1):
+					if 'commit' in log[lineCkpt]:
+						splitedCommit=log[lineCkpt].split(' ')
+						commitedTransactions[splitedCommit[1][:-1]]='Nao visitado'
+				break
+
+lastStartLine=0
+for line in range(len(log)-1,-1, -1):
+	allStarts=True 
+	if 'unvisited' in commitedTransactions.values():#caso nao encontrar todos os starts
+		allStarts=False 
+	if allStarts==True:
+		break
+	if 'start' in log[line] and 'CKPT' not in log[line]:
+		splitedStart=log[line].split(' ')
+		transaction=splitedStart[1][:-1]
+		if transaction in commitedTransactions.keys():
+			commitedTransactions[transaction]='visited'
+
+	lastStartLine=line
+
+transactionInependent=[] #transacao commitada independente de checkpoint
+for line in range(0,len(log)-1,1):
+	if 'commit' in log[line]:
+		splitedCommit=log[line].split(' ')
+		transactionInependent.append(splitedCommit[1][:-1])
